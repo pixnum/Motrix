@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motrix - Speedometer App</title>
+<title>Motrix</title>
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
 <style>
   body {
@@ -55,7 +55,6 @@
     background: #0ff;
     transform-origin: bottom;
     transform: rotate(-120deg);
-    transition: transform 0.3s ease-out;
     box-shadow: 0 0 10px #0ff;
   }
 
@@ -141,6 +140,7 @@
   <div class="buttons">
     <button onclick="startTracking()">Start</button>
     <button onclick="stopTracking()">Stop</button>
+    <button onclick="toggleMode()">Toggle Analogue/Digital</button>
   </div>
 
   <footer>© Manik Roy 2025 | All Rights Reserved.</footer>
@@ -153,7 +153,10 @@
   const statusEl = document.getElementById("status");
   let watchId = null;
 
-  // Add numerals inside dial
+  let currentSpeed = 0;
+  let targetSpeed = 0;
+  let analogueMode = true; // true = show needle, false = digital only
+
   function addNumerals() {
     const center = 150;
     const radius = 120;
@@ -173,10 +176,20 @@
 
   addNumerals();
 
-  function updateSpeed(speed) {
-    const angle = -120 + (speed / maxSpeed) * 240;
-    needle.style.transform = `rotate(${angle}deg)`;
-    digitalCenter.textContent = speed.toFixed(1);
+  function updateNeedle() {
+    const diff = targetSpeed - currentSpeed;
+    currentSpeed += diff * 0.1; // smooth factor
+    if (analogueMode) {
+      const angle = -120 + (currentSpeed / maxSpeed) * 240;
+      needle.style.transform = `rotate(${angle}deg)`;
+      needle.style.display = 'block';
+    } else {
+      needle.style.display = 'none';
+    }
+    digitalCenter.textContent = currentSpeed.toFixed(1);
+    if (Math.abs(diff) > 0.01) {
+      requestAnimationFrame(updateNeedle);
+    }
   }
 
   function showError(error) {
@@ -190,16 +203,13 @@
 
   function startTracking() {
     if (!navigator.geolocation) { statusEl.textContent = "Geolocation not supported."; return; }
+    if (watchId !== null) { statusEl.textContent = "Tracking is already active."; return; }
     statusEl.textContent = "Activating GPS...";
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        if (pos.coords.speed != null) {
-          const speedKmh = pos.coords.speed * 3.6;
-          updateSpeed(speedKmh);
-          statusEl.textContent = "Tracking speed...";
-        } else {
-          statusEl.textContent = "Speed unavailable (stationary or weak GPS)";
-        }
+        targetSpeed = pos.coords.speed != null ? pos.coords.speed * 3.6 : 0;
+        requestAnimationFrame(updateNeedle);
+        statusEl.textContent = "Tracking speed...";
       },
       showError,
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
@@ -207,10 +217,29 @@
   }
 
   function stopTracking() {
-    if (watchId) { navigator.geolocation.clearWatch(watchId); statusEl.textContent = "GPS tracking stopped."; }
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      statusEl.textContent = "GPS tracking stopped.";
+      targetSpeed = 0;
+      requestAnimationFrame(updateNeedle);
+    } else {
+      statusEl.textContent = "Tracking is not active.";
+    }
   }
 
-  updateSpeed(0);
+  function toggleMode() {
+    analogueMode = !analogueMode;
+    if (!analogueMode) {
+      needle.style.display = 'none';
+    } else {
+      needle.style.display = 'block';
+    }
+  }
+
+  currentSpeed = 0;
+  targetSpeed = 0;
+  updateNeedle();
 </script>
 
 </body>
