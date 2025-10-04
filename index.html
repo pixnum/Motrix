@@ -6,6 +6,8 @@
 <title>Motrix</title>
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
   body {
     background: radial-gradient(circle at center, #111 40%, #000);
     color: #0ff;
@@ -32,6 +34,15 @@
     border-radius: 25px;
     box-shadow: 0 0 20px #0ff;
     background: #111;
+    width: 350px;
+  }
+
+  .digital-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 4rem;
+    color: #0ff;
+    text-shadow: 0 0 15px #0ff;
+    margin-bottom: 10px;
   }
 
   .speedometer {
@@ -56,23 +67,6 @@
     transform-origin: bottom;
     transform: rotate(-120deg);
     box-shadow: 0 0 10px #0ff;
-  }
-
-  .center-cap {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #111;
-    border: 3px solid #0ff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 0 10px #0ff;
-    z-index: 10;
-    font-size: 2rem;
-    color: #0ff;
-    text-shadow: 0 0 10px #0ff;
   }
 
   .numeral {
@@ -129,9 +123,10 @@
 <h2>🚗 Motrix</h2>
 
 <div class="speedometer-frame">
+  <div class="digital-display" id="digitalDisplay">0.0</div>
+
   <div class="speedometer" id="speedometer">
     <div class="needle" id="needle"></div>
-    <div class="center-cap" id="digitalCenter">0.0</div>
   </div>
   <div class="unit">km/h</div>
 
@@ -149,7 +144,7 @@
 <script>
   const maxSpeed = 300;
   const needle = document.getElementById("needle");
-  const digitalCenter = document.getElementById("digitalCenter");
+  const digitalDisplay = document.getElementById("digitalDisplay");
   const statusEl = document.getElementById("status");
   let watchId = null;
 
@@ -178,7 +173,7 @@
 
   function updateNeedle() {
     const diff = targetSpeed - currentSpeed;
-    currentSpeed += diff * 0.1; // smooth factor
+    currentSpeed += diff * 0.1;
     if (analogueMode) {
       const angle = -120 + (currentSpeed / maxSpeed) * 240;
       needle.style.transform = `rotate(${angle}deg)`;
@@ -186,7 +181,7 @@
     } else {
       needle.style.display = 'none';
     }
-    digitalCenter.textContent = currentSpeed.toFixed(1);
+    digitalDisplay.textContent = currentSpeed.toFixed(1);
     if (Math.abs(diff) > 0.01) {
       requestAnimationFrame(updateNeedle);
     }
