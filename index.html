@@ -5,13 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Motrix</title>
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
+
+<!-- Import DSEG7 Classic font for calculator-like digits -->
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+  @font-face {
+    font-family: 'DSEG7';
+    src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/otf/DSEG7Classic-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
 
   body {
     background: radial-gradient(circle at center, #111 40%, #000);
     color: #0ff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: Arial, sans-serif; /* general readable font for labels */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -37,11 +44,12 @@
     width: 350px;
   }
 
+  /* Digital display with calculator style font */
   .digital-display {
-    font-family: 'Orbitron', monospace;
+    font-family: 'DSEG7', monospace;
     font-size: 5rem;
     color: #0ff;
-    text-shadow: 0 0 15px #0ff;
+    text-shadow: 0 0 10px #0ff;
     margin-bottom: 10px;
   }
 
@@ -74,17 +82,20 @@
     color: #0ff;
     font-size: 0.9rem;
     text-shadow: 0 0 5px #0ff;
+    font-family: Arial, sans-serif;
   }
 
   .unit {
     font-size: 1rem;
     color: #aaa;
     margin-top: 5px;
+    font-family: Arial, sans-serif;
   }
 
   .status {
     font-size: 1rem;
     color: #aaa;
+    font-family: Arial, sans-serif;
   }
 
   .buttons {
