@@ -7,7 +7,6 @@
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
 
 <style>
-  /* LED-style font (DSEG7 WOFF2) */
   @font-face {
     font-family: 'DSEG7';
     src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/woff2/DSEG7Classic-Regular.woff2') format('woff2');
@@ -44,7 +43,6 @@
     width: 350px;
   }
 
-  /* Digital display with LED-style font */
   .digital-display {
     font-family: 'DSEG7', monospace;
     font-size: 5rem;
@@ -85,26 +83,11 @@
     font-family: Arial, sans-serif;
   }
 
-  .unit {
-    font-size: 1rem;
-    color: #aaa;
-    margin-top: 5px;
-    font-family: Arial, sans-serif;
-  }
+  .unit { font-size: 1rem; color: #aaa; margin-top: 5px; font-family: Arial, sans-serif; }
 
-  .status {
-    font-size: 1rem;
-    color: #aaa;
-    font-family: Arial, sans-serif;
-  }
+  .status { font-size: 1rem; color: #aaa; font-family: Arial, sans-serif; }
 
-  .buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 10px;
-  }
+  .buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
 
   button {
     background: #111;
@@ -117,16 +100,9 @@
     transition: background 0.3s, color 0.3s;
   }
 
-  button:hover {
-    background: #0ff;
-    color: #111;
-  }
+  button:hover { background: #0ff; color: #111; }
 
-  footer {
-    margin-top: 15px;
-    font-size: 0.9rem;
-    color: #aaa;
-  }
+  footer { margin-top: 15px; font-size: 0.9rem; color: #aaa; }
 </style>
 </head>
 <body>
@@ -134,10 +110,8 @@
 <h2>🚗 Motrix</h2>
 
 <div class="speedometer-frame">
-  <!-- Digital Display -->
   <div class="digital-display" id="digitalDisplay">0</div>
 
-  <!-- Analogue Speedometer -->
   <div class="speedometer" id="speedometer">
     <div class="needle" id="needle"></div>
   </div>
@@ -155,112 +129,125 @@
 </div>
 
 <script>
-  const maxSpeed = 300;
-  const needle = document.getElementById("needle");
-  const speedometer = document.getElementById("speedometer");
-  const digitalDisplay = document.getElementById("digitalDisplay");
-  const statusEl = document.getElementById("status");
-  const unitEl = document.getElementById("unit");
+const maxSpeed = 300;
+const needle = document.getElementById("needle");
+const speedometer = document.getElementById("speedometer");
+const digitalDisplay = document.getElementById("digitalDisplay");
+const statusEl = document.getElementById("status");
+const unitEl = document.getElementById("unit");
 
-  let watchId = null;
-  let currentSpeed = 0;
-  let targetSpeed = 0;
-  let analogueMode = true;
+let watchId = null;
+let currentSpeed = 0;
+let targetSpeed = 0;
+let analogueMode = true;
+let animationFrame = null;
 
-  function addNumerals() {
-    const center = 150;
-    const radius = 120;
-    for (let i = 0; i <= maxSpeed; i += 20) {
-      const numeral = document.createElement("div");
-      numeral.className = "numeral";
-      numeral.innerText = i;
-      const angle = (-120 + (i / maxSpeed) * 240) * (Math.PI / 180);
-      const x = center + radius * Math.cos(angle - Math.PI/2);
-      const y = center + radius * Math.sin(angle - Math.PI/2);
-      numeral.style.left = `${x - 10}px`;
-      numeral.style.top = `${y - 10}px`;
-      speedometer.appendChild(numeral);
-    }
+// Add numerals to the analogue speedometer
+function addNumerals() {
+  const center = 150;
+  const radius = 120;
+  for (let i = 0; i <= maxSpeed; i += 20) {
+    const numeral = document.createElement("div");
+    numeral.className = "numeral";
+    numeral.innerText = i;
+    const angle = (-120 + (i / maxSpeed) * 240) * (Math.PI / 180);
+    const x = center + radius * Math.cos(angle - Math.PI/2);
+    const y = center + radius * Math.sin(angle - Math.PI/2);
+    numeral.style.left = `${x - 10}px`;
+    numeral.style.top = `${y - 10}px`;
+    speedometer.appendChild(numeral);
+  }
+}
+addNumerals();
+
+// Update needle and digital display
+function updateNeedle() {
+  let diff = targetSpeed - currentSpeed;
+  currentSpeed += diff * 0.1; // smooth movement
+
+  if (analogueMode) {
+    speedometer.style.display = 'flex';
+    needle.style.display = 'block';
+    digitalDisplay.style.display = 'none';
+    unitEl.style.display = 'block';
+    const angle = -120 + (currentSpeed / maxSpeed) * 240;
+    needle.style.transform = `rotate(${angle}deg)`;
+  } else {
+    speedometer.style.display = 'none';
+    needle.style.display = 'none';
+    digitalDisplay.style.display = 'block';
+    unitEl.style.display = 'none';
   }
 
-  addNumerals();
+  digitalDisplay.textContent = parseInt(currentSpeed); // integer only
 
-  function updateNeedle() {
-    let diff = targetSpeed - currentSpeed;
+  animationFrame = requestAnimationFrame(updateNeedle);
+}
 
-    if (Math.abs(diff) < 0.5) {
-      targetSpeed = 0;
-      diff = -currentSpeed;
-    }
-
-    currentSpeed += diff * 0.1;
-
-    if (analogueMode) {
-      speedometer.style.display = 'flex';
-      needle.style.display = 'block';
-      digitalDisplay.style.display = 'none';
-      unitEl.style.display = 'block';
-      const angle = -120 + (currentSpeed / maxSpeed) * 240;
-      needle.style.transform = `rotate(${angle}deg)`;
-    } else {
-      speedometer.style.display = 'none';
-      needle.style.display = 'none';
-      digitalDisplay.style.display = 'block';
-      unitEl.style.display = 'none';
-    }
-
-    // LED digital display, rounded to nearest integer
-    digitalDisplay.textContent = Math.round(currentSpeed);
-
-    if (Math.abs(diff) > 0.01) {
-      requestAnimationFrame(updateNeedle);
-    }
+// Handle GPS errors
+function showError(error) {
+  switch (error.code) {
+    case error.PERMISSION_DENIED: statusEl.textContent = "❌ Location access denied."; break;
+    case error.POSITION_UNAVAILABLE: statusEl.textContent = "⚠️ GPS signal unavailable."; break;
+    case error.TIMEOUT: statusEl.textContent = "⌛ GPS request timed out."; break;
+    default: statusEl.textContent = "Unknown location error.";
   }
+}
 
-  function showError(error) {
-    switch (error.code) {
-      case error.PERMISSION_DENIED: statusEl.textContent = "❌ Location access denied."; break;
-      case error.POSITION_UNAVAILABLE: statusEl.textContent = "⚠️ GPS signal unavailable."; break;
-      case error.TIMEOUT: statusEl.textContent = "⌛ Location request timed out."; break;
-      default: statusEl.textContent = "Unknown location error.";
-    }
+// Start GPS tracking
+function startTracking() {
+  if (!navigator.geolocation) { statusEl.textContent = "Geolocation not supported."; return; }
+  if (watchId !== null) { statusEl.textContent = "Tracking is already active."; return; }
+
+  statusEl.textContent = "Waiting for GPS signal (may take several seconds)...";
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      targetSpeed = (pos.coords.speed != null && !isNaN(pos.coords.speed)) 
+                      ? pos.coords.speed * 3.6 
+                      : targetSpeed;
+
+      if (!animationFrame) updateNeedle();
+
+      // Continuous tracking
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (pos.coords.speed != null && !isNaN(pos.coords.speed)) {
+            targetSpeed = pos.coords.speed * 3.6;
+          }
+          statusEl.textContent = "Tracking speed...";
+          if (!animationFrame) updateNeedle();
+        },
+        showError,
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 }
+      );
+    },
+    (err) => { showError(err); statusEl.textContent += " Try moving outdoors."; },
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 }
+  );
+}
+
+// Stop GPS tracking
+function stopTracking() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    statusEl.textContent = "GPS tracking stopped.";
   }
-
-  function startTracking() {
-    if (!navigator.geolocation) { statusEl.textContent = "Geolocation not supported."; return; }
-    if (watchId !== null) { statusEl.textContent = "Tracking is already active."; return; }
-    statusEl.textContent = "Activating GPS...";
-    watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        targetSpeed = pos.coords.speed != null ? pos.coords.speed * 3.6 : 0;
-        requestAnimationFrame(updateNeedle);
-        statusEl.textContent = "Tracking speed...";
-      },
-      showError,
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
-    );
-  }
-
-  function stopTracking() {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
-      statusEl.textContent = "GPS tracking stopped.";
-      targetSpeed = 0;
-      requestAnimationFrame(updateNeedle);
-    } else {
-      statusEl.textContent = "Tracking is not active.";
-    }
-  }
-
-  function toggleMode() {
-    analogueMode = !analogueMode;
-    updateNeedle();
-  }
-
-  currentSpeed = 0;
   targetSpeed = 0;
-  updateNeedle();
+  if (!animationFrame) updateNeedle();
+}
+
+// Toggle analogue/digital display
+function toggleMode() {
+  analogueMode = !analogueMode;
+  updateNeedle(); // immediately reflect the change
+}
+
+// Initialize
+currentSpeed = 0;
+targetSpeed = 0;
+updateNeedle();
 </script>
 
 </body>
