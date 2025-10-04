@@ -37,7 +37,6 @@ h2 { margin-bottom: 20px; }
   width: 350px;
 }
 
-/* Vehicle Mode Dropdown */
 .vehicle-select {
   margin-bottom: 10px;
   padding: 5px;
@@ -49,7 +48,6 @@ h2 { margin-bottom: 20px; }
   cursor: pointer;
 }
 
-/* Digital Display */
 .digital-display {
   font-family: 'Orbitron', monospace;
   font-size: 5rem;
@@ -58,7 +56,6 @@ h2 { margin-bottom: 20px; }
   margin-bottom: 10px;
 }
 
-/* Analogue Speedometer */
 .speedometer {
   position: relative;
   width: 300px;
@@ -138,17 +135,17 @@ footer {
 
 <div class="speedometer-frame">
 
-  <!-- Vehicle Mode -->
   <select class="vehicle-select" id="vehicleSelect">
     <option value="car" selected>Car</option>
     <option value="train">Train</option>
     <option value="bike">Bike</option>
+    <option value="aeroplane">Aeroplane</option>
+    <option value="ship">Ship</option>
+    <option value="human">Human</option>
   </select>
 
-  <!-- Digital Display -->
   <div class="digital-display" id="digitalDisplay">0.0</div>
 
-  <!-- Analogue Speedometer -->
   <div class="speedometer" id="speedometer">
     <div class="needle" id="needle"></div>
   </div>
@@ -166,7 +163,7 @@ footer {
 </div>
 
 <script>
-let vehicleMaxSpeed = 180; // default for Car
+let vehicleMaxSpeed = 180;
 const needle = document.getElementById("needle");
 const speedometer = document.getElementById("speedometer");
 const digitalDisplay = document.getElementById("digitalDisplay");
@@ -183,16 +180,20 @@ let lastTime = null;
 let animationFrame = null;
 let lastSpeed = 0;
 
-// Vehicle mode adjustment
+// Vehicle mode selection
 vehicleSelect.addEventListener('change', () => {
   const v = vehicleSelect.value;
-  if(v === 'car') vehicleMaxSpeed = 180;
-  else if(v === 'train') vehicleMaxSpeed = 300;
-  else if(v === 'bike') vehicleMaxSpeed = 80;
+  switch(v){
+    case 'car': vehicleMaxSpeed = 180; break;
+    case 'train': vehicleMaxSpeed = 300; break;
+    case 'bike': vehicleMaxSpeed = 80; break;
+    case 'aeroplane': vehicleMaxSpeed = 900; break;
+    case 'ship': vehicleMaxSpeed = 50; break;
+    case 'human': vehicleMaxSpeed = 25; break;
+  }
   addNumerals();
 });
 
-// Add speed numerals on analogue dial
 function addNumerals() {
   const center = 150;
   const radius = 120;
@@ -214,10 +215,11 @@ function addNumerals() {
 
 addNumerals();
 
-// Update needle & digital display
 function updateNeedle() {
-  const diff = targetSpeed - currentSpeed;
-  currentSpeed += diff * 0.1; // smooth interpolation
+  let diff = targetSpeed - currentSpeed;
+  const maxDelta = 5; 
+  const delta = Math.max(-maxDelta, Math.min(diff, maxDelta));
+  currentSpeed += delta * 0.1;
 
   if(analogueMode){
     speedometer.style.display='flex';
@@ -233,10 +235,8 @@ function updateNeedle() {
     unitEl.style.display='none';
   }
 
-  // Digital display update
   digitalDisplay.textContent = currentSpeed.toFixed(1);
 
-  // LED glow pulse based on speed change
   const speedChange = Math.abs(currentSpeed - lastSpeed);
   const glowIntensity = Math.min(30, 10 + speedChange*5);
   digitalDisplay.style.textShadow = `
@@ -250,7 +250,6 @@ function updateNeedle() {
   else animationFrame = null;
 }
 
-// GPS error handling
 function showError(error){
   switch(error.code){
     case error.PERMISSION_DENIED: statusEl.textContent="❌ Location access denied."; break;
@@ -260,27 +259,33 @@ function showError(error){
   }
 }
 
-// Calculate speed from GPS distance/time
 function updatePosition(pos){
   const now = pos.timestamp;
-  let speedKmh = 0;
+  let measuredSpeed = 0;
 
   if(lastPos && lastTime){
     const dt = (now - lastTime)/1000;
     const distance = haversineDistance(lastPos.latitude,lastPos.longitude,pos.coords.latitude,pos.coords.longitude);
-    if(dt>0) speedKmh = (distance/dt)*3.6;
+    if(dt>0) measuredSpeed = (distance/dt)*3.6;
   }
 
   lastPos = pos.coords;
   lastTime = now;
-  targetSpeed = speedKmh>0 ? speedKmh : (pos.coords.speed != null ? pos.coords.speed*3.6 : 0);
+
+  let gpsSpeed = pos.coords.speed != null ? pos.coords.speed*3.6 : 0;
+  measuredSpeed = measuredSpeed > 0 ? measuredSpeed : gpsSpeed;
+
+  if(Math.abs(measuredSpeed - currentSpeed) > 50) measuredSpeed = currentSpeed;
+
+  const smoothingFactor = 0.2;
+  targetSpeed = targetSpeed + (measuredSpeed - targetSpeed) * smoothingFactor;
+
   if(targetSpeed > vehicleMaxSpeed) targetSpeed = vehicleMaxSpeed;
 
   if(!animationFrame) animationFrame = requestAnimationFrame(updateNeedle);
   statusEl.textContent="Tracking speed...";
 }
 
-// Haversine formula
 function haversineDistance(lat1, lon1, lat2, lon2){
   const R=6371000;
   const toRad=x=>x*Math.PI/180;
@@ -291,7 +296,6 @@ function haversineDistance(lat1, lon1, lat2, lon2){
   return R*c;
 }
 
-// Start GPS tracking
 function startTracking(){
   if(!navigator.geolocation){ statusEl.textContent="Geolocation not supported."; return; }
   if(watchId!==null){ statusEl.textContent="Tracking is already active."; return; }
@@ -302,7 +306,6 @@ function startTracking(){
   if(!animationFrame) animationFrame = requestAnimationFrame(updateNeedle);
 }
 
-// Stop GPS tracking
 function stopTracking(){
   if(watchId!==null){
     navigator.geolocation.clearWatch(watchId);
@@ -312,11 +315,10 @@ function stopTracking(){
     targetSpeed = 0;
     statusEl.textContent="GPS tracking stopped.";
 
-    if(!animationFrame) animationFrame = requestAnimationFrame(updateNeedle);
+    if(!animationFrame) requestAnimationFrame(updateNeedle);
   } else statusEl.textContent="Tracking is not active.";
 }
 
-// Toggle analogue/digital
 function toggleMode(){
   analogueMode = !analogueMode;
   if(!animationFrame) animationFrame = requestAnimationFrame(updateNeedle);
