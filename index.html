@@ -6,11 +6,11 @@
 <title>Motrix</title>
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
 
-<!-- Import DSEG7 Classic font for calculator-like digits -->
 <style>
+  /* LED-style font for digital display */
   @font-face {
-    font-family: 'DSEG7';
-    src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/otf/DSEG7Classic-Regular.ttf') format('truetype');
+    font-family: 'DSEG7Bold';
+    src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/otf/DSEG7Classic-Bold.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
   }
@@ -18,7 +18,7 @@
   body {
     background: radial-gradient(circle at center, #111 40%, #000);
     color: #0ff;
-    font-family: Arial, sans-serif; /* general readable font for labels */
+    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -44,12 +44,12 @@
     width: 350px;
   }
 
-  /* Digital display with calculator style font */
+  /* Digital display with LED-style font */
   .digital-display {
-    font-family: 'DSEG7', monospace;
+    font-family: 'DSEG7Bold', monospace;
     font-size: 5rem;
     color: #0ff;
-    text-shadow: 0 0 10px #0ff;
+    text-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
     margin-bottom: 10px;
   }
 
@@ -134,8 +134,8 @@
 <h2>🚗 Motrix</h2>
 
 <div class="speedometer-frame">
-  <!-- Large Digital Display -->
-  <div class="digital-display" id="digitalDisplay">0.0</div>
+  <!-- Digital Display -->
+  <div class="digital-display" id="digitalDisplay">0</div>
 
   <!-- Analogue Speedometer -->
   <div class="speedometer" id="speedometer">
@@ -165,7 +165,7 @@
   let watchId = null;
   let currentSpeed = 0;
   let targetSpeed = 0;
-  let analogueMode = true; // true = show dial, false = digital only
+  let analogueMode = true;
 
   function addNumerals() {
     const center = 150;
@@ -186,28 +186,31 @@
   addNumerals();
 
   function updateNeedle() {
-    const diff = targetSpeed - currentSpeed;
+    let diff = targetSpeed - currentSpeed;
+
+    if (Math.abs(diff) < 0.5) {
+      targetSpeed = 0;
+      diff = -currentSpeed;
+    }
+
     currentSpeed += diff * 0.1;
 
     if (analogueMode) {
-      // Analogue: show dial + needle, hide digital
       speedometer.style.display = 'flex';
       needle.style.display = 'block';
       digitalDisplay.style.display = 'none';
       unitEl.style.display = 'block';
-
       const angle = -120 + (currentSpeed / maxSpeed) * 240;
       needle.style.transform = `rotate(${angle}deg)`;
     } else {
-      // Digital only: hide dial + needle, show digital
       speedometer.style.display = 'none';
       needle.style.display = 'none';
       digitalDisplay.style.display = 'block';
       unitEl.style.display = 'none';
     }
 
-    // Always update digital value
-    digitalDisplay.textContent = currentSpeed.toFixed(1);
+    // Round to nearest integer for digital display
+    digitalDisplay.textContent = Math.round(currentSpeed);
 
     if (Math.abs(diff) > 0.01) {
       requestAnimationFrame(updateNeedle);
