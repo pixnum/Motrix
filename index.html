@@ -5,20 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Motrix</title>
 <link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
-
 <style>
-  /* Calculator-style font */
-  @font-face {
-    font-family: 'DSEG7';
-    src: url('https://cdn.jsdelivr.net/gh/keshikan/DSEG@master/otf/DSEG7Classic-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
   body {
     background: radial-gradient(circle at center, #111 40%, #000);
     color: #0ff;
-    font-family: Arial, sans-serif;
+    font-family: 'Orbitron', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -44,12 +37,11 @@
     width: 350px;
   }
 
-  /* Digital display with calculator font */
   .digital-display {
-    font-family: 'DSEG7', monospace;
+    font-family: 'Orbitron', monospace;
     font-size: 5rem;
     color: #0ff;
-    text-shadow: 0 0 10px #0ff;
+    text-shadow: 0 0 15px #0ff;
     margin-bottom: 10px;
   }
 
@@ -82,20 +74,17 @@
     color: #0ff;
     font-size: 0.9rem;
     text-shadow: 0 0 5px #0ff;
-    font-family: Arial, sans-serif;
   }
 
   .unit {
     font-size: 1rem;
     color: #aaa;
     margin-top: 5px;
-    font-family: Arial, sans-serif;
   }
 
   .status {
     font-size: 1rem;
     color: #aaa;
-    font-family: Arial, sans-serif;
   }
 
   .buttons {
@@ -134,7 +123,7 @@
 <h2>🚗 Motrix</h2>
 
 <div class="speedometer-frame">
-  <!-- Digital Display -->
+  <!-- Large Digital Display -->
   <div class="digital-display" id="digitalDisplay">0.0</div>
 
   <!-- Analogue Speedometer -->
@@ -165,9 +154,8 @@
   let watchId = null;
   let currentSpeed = 0;
   let targetSpeed = 0;
-  let analogueMode = true;
+  let analogueMode = true; // true = show dial, false = digital only
 
-  // Add analogue numerals
   function addNumerals() {
     const center = 150;
     const radius = 120;
@@ -186,32 +174,28 @@
 
   addNumerals();
 
-  // Main speed update
   function updateNeedle() {
-    let diff = targetSpeed - currentSpeed;
-
-    // Force very small speeds to zero
-    if (Math.abs(diff) < 0.5) {
-      targetSpeed = 0;
-      diff = -currentSpeed;
-    }
-
+    const diff = targetSpeed - currentSpeed;
     currentSpeed += diff * 0.1;
 
     if (analogueMode) {
+      // Analogue: show dial + needle, hide digital
       speedometer.style.display = 'flex';
       needle.style.display = 'block';
       digitalDisplay.style.display = 'none';
       unitEl.style.display = 'block';
+
       const angle = -120 + (currentSpeed / maxSpeed) * 240;
       needle.style.transform = `rotate(${angle}deg)`;
     } else {
+      // Digital only: hide dial + needle, show digital
       speedometer.style.display = 'none';
       needle.style.display = 'none';
       digitalDisplay.style.display = 'block';
       unitEl.style.display = 'none';
     }
 
+    // Always update digital value
     digitalDisplay.textContent = currentSpeed.toFixed(1);
 
     if (Math.abs(diff) > 0.01) {
@@ -248,7 +232,7 @@
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
       statusEl.textContent = "GPS tracking stopped.";
-      targetSpeed = 0; // smooth reset to 0
+      targetSpeed = 0;
       requestAnimationFrame(updateNeedle);
     } else {
       statusEl.textContent = "Tracking is not active.";
