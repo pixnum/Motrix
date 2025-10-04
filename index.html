@@ -39,7 +39,7 @@
 
   .digital-display {
     font-family: 'Orbitron', monospace;
-    font-size: 4rem;
+    font-size: 5rem;
     color: #0ff;
     text-shadow: 0 0 15px #0ff;
     margin-bottom: 10px;
@@ -123,12 +123,14 @@
 <h2>🚗 Motrix</h2>
 
 <div class="speedometer-frame">
+  <!-- Large Digital Display -->
   <div class="digital-display" id="digitalDisplay">0.0</div>
 
+  <!-- Analogue Speedometer -->
   <div class="speedometer" id="speedometer">
     <div class="needle" id="needle"></div>
   </div>
-  <div class="unit">km/h</div>
+  <div class="unit" id="unit">km/h</div>
 
   <div class="status" id="status">Waiting for GPS...</div>
 
@@ -144,18 +146,19 @@
 <script>
   const maxSpeed = 300;
   const needle = document.getElementById("needle");
+  const speedometer = document.getElementById("speedometer");
   const digitalDisplay = document.getElementById("digitalDisplay");
   const statusEl = document.getElementById("status");
-  let watchId = null;
+  const unitEl = document.getElementById("unit");
 
+  let watchId = null;
   let currentSpeed = 0;
   let targetSpeed = 0;
-  let analogueMode = true; // true = show needle, false = digital only
+  let analogueMode = true; // true = show dial, false = digital only
 
   function addNumerals() {
     const center = 150;
     const radius = 120;
-    const speedometer = document.getElementById("speedometer");
     for (let i = 0; i <= maxSpeed; i += 20) {
       const numeral = document.createElement("div");
       numeral.className = "numeral";
@@ -174,14 +177,27 @@
   function updateNeedle() {
     const diff = targetSpeed - currentSpeed;
     currentSpeed += diff * 0.1;
+
     if (analogueMode) {
+      // Analogue: show dial + needle, hide digital
+      speedometer.style.display = 'flex';
+      needle.style.display = 'block';
+      digitalDisplay.style.display = 'none';
+      unitEl.style.display = 'block';
+
       const angle = -120 + (currentSpeed / maxSpeed) * 240;
       needle.style.transform = `rotate(${angle}deg)`;
-      needle.style.display = 'block';
     } else {
+      // Digital only: hide dial + needle, show digital
+      speedometer.style.display = 'none';
       needle.style.display = 'none';
+      digitalDisplay.style.display = 'block';
+      unitEl.style.display = 'none';
     }
+
+    // Always update digital value
     digitalDisplay.textContent = currentSpeed.toFixed(1);
+
     if (Math.abs(diff) > 0.01) {
       requestAnimationFrame(updateNeedle);
     }
@@ -225,11 +241,7 @@
 
   function toggleMode() {
     analogueMode = !analogueMode;
-    if (!analogueMode) {
-      needle.style.display = 'none';
-    } else {
-      needle.style.display = 'block';
-    }
+    updateNeedle();
   }
 
   currentSpeed = 0;
