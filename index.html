@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motrix - Speedometer App</title>
+<link rel="icon" href="https://img.icons8.com/ios-filled/50/0ff/speed.png" type="image/png">
+<style>
+  body {
+    background: radial-gradient(circle at center, #111 40%, #000);
+    color: #0ff;
+    font-family: 'Orbitron', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding-top: 60px;
+    text-align: center;
+  }
+
+  h2 { margin-bottom: 20px; }
+
+  .speedometer-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border: 2px solid #0ff;
+    border-radius: 25px;
+    box-shadow: 0 0 20px #0ff;
+    background: #111;
+  }
+
+  .speedometer {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #111 40%, #222 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 25px #0ff, inset 0 0 20px #0ff;
+  }
+
+  .needle {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    width: 3px;
+    height: 120px;
+    background: #0ff;
+    transform-origin: bottom;
+    transform: rotate(-120deg);
+    transition: transform 0.3s ease-out;
+    box-shadow: 0 0 10px #0ff;
+  }
+
+  .center-cap {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #111;
+    border: 3px solid #0ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 10px #0ff;
+    z-index: 10;
+    font-size: 2rem;
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff;
+  }
+
+  .numeral {
+    position: absolute;
+    color: #0ff;
+    font-size: 0.9rem;
+    text-shadow: 0 0 5px #0ff;
+  }
+
+  .unit {
+    font-size: 1rem;
+    color: #aaa;
+    margin-top: 5px;
+  }
+
+  .status {
+    font-size: 1rem;
+    color: #aaa;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  button {
+    background: #111;
+    border: 2px solid #0ff;
+    color: #0ff;
+    padding: 10px 15px;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  button:hover {
+    background: #0ff;
+    color: #111;
+  }
+
+  footer {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<h2>🚗 Motrix</h2>
+
+<div class="speedometer-frame">
+  <div class="speedometer" id="speedometer">
+    <div class="needle" id="needle"></div>
+    <div class="center-cap" id="digitalCenter">0.0</div>
+  </div>
+  <div class="unit">km/h</div>
+
+  <div class="status" id="status">Waiting for GPS...</div>
+
+  <div class="buttons">
+    <button onclick="startTracking()">Start</button>
+    <button onclick="stopTracking()">Stop</button>
+  </div>
+
+  <footer>© Manik Roy 2025 | All Rights Reserved.</footer>
+</div>
+
+<script>
+  const maxSpeed = 300;
+  const needle = document.getElementById("needle");
+  const digitalCenter = document.getElementById("digitalCenter");
+  const statusEl = document.getElementById("status");
+  let watchId = null;
+
+  // Add numerals inside dial
+  function addNumerals() {
+    const center = 150;
+    const radius = 120;
+    const speedometer = document.getElementById("speedometer");
+    for (let i = 0; i <= maxSpeed; i += 20) {
+      const numeral = document.createElement("div");
+      numeral.className = "numeral";
+      numeral.innerText = i;
+      const angle = (-120 + (i / maxSpeed) * 240) * (Math.PI / 180);
+      const x = center + radius * Math.cos(angle - Math.PI/2);
+      const y = center + radius * Math.sin(angle - Math.PI/2);
+      numeral.style.left = `${x - 10}px`;
+      numeral.style.top = `${y - 10}px`;
+      speedometer.appendChild(numeral);
+    }
+  }
+
+  addNumerals();
+
+  function updateSpeed(speed) {
+    const angle = -120 + (speed / maxSpeed) * 240;
+    needle.style.transform = `rotate(${angle}deg)`;
+    digitalCenter.textContent = speed.toFixed(1);
+  }
+
+  function showError(error) {
+    switch (error.code) {
+      case error.PERMISSION_DENIED: statusEl.textContent = "❌ Location access denied."; break;
+      case error.POSITION_UNAVAILABLE: statusEl.textContent = "⚠️ GPS signal unavailable."; break;
+      case error.TIMEOUT: statusEl.textContent = "⌛ Location request timed out."; break;
+      default: statusEl.textContent = "Unknown location error.";
+    }
+  }
+
+  function startTracking() {
+    if (!navigator.geolocation) { statusEl.textContent = "Geolocation not supported."; return; }
+    statusEl.textContent = "Activating GPS...";
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (pos.coords.speed != null) {
+          const speedKmh = pos.coords.speed * 3.6;
+          updateSpeed(speedKmh);
+          statusEl.textContent = "Tracking speed...";
+        } else {
+          statusEl.textContent = "Speed unavailable (stationary or weak GPS)";
+        }
+      },
+      showError,
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+    );
+  }
+
+  function stopTracking() {
+    if (watchId) { navigator.geolocation.clearWatch(watchId); statusEl.textContent = "GPS tracking stopped."; }
+  }
+
+  updateSpeed(0);
+</script>
+
+</body>
+</html>
